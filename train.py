@@ -6,23 +6,25 @@ import skimage.filters
 import skimage.io
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
+import pickle
+from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.utils import check_random_state
+from sklearn.preprocessing import LabelEncoder
+
+from sklearn.datasets import load_iris
+
 
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
 from keras.losses import sparse_categorical_crossentropy
 from keras.optimizers import adadelta
 from keras.models import load_model
-
+import svm
 
 
 def getLBPimage(img):
-    '''
-    == Input ==
-    gray_image  : color image of shape (height, width)
 
-    == Output ==
-    imgLBP : LBP converted image of the same shape as
-    '''
+    # ref: https://fairyonice.github.io/implement-lbp-from%20scratch.html
 
     ### Step 0: Step 0: Convert an image to grayscale
     gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -46,7 +48,8 @@ def getLBPimage(img):
             else:
                 num = 0
             imgLBP[ih + 1, iw + 1] = num
-    return (imgLBP)
+    return imgLBP
+
 
 def remove_background(img):
 
@@ -68,6 +71,7 @@ def prepare_training_data(data_folder_path, fruit_type = "all", removeBackground
 
     fruits = []
     labels = []
+    lbp_fruits = []
     label = ""
     # for each img in each directory from dataset:
     for dir_name in dirs:
@@ -107,12 +111,14 @@ def prepare_training_data(data_folder_path, fruit_type = "all", removeBackground
             # remove background
             if removeBackground:
                 fruit = remove_background(image)
-                #fruit = getLBPimage(image)
                 #fruit = np.expand_dims(fruit, axis=2)
             else:
                 fruit = image
                 #fruit = np.expand_dims(fruit, axis=2)
                 #fruit = getLBPimage(fruit)
+            if use_lbp_feature:
+                lbp_fruit = getLBPimage(image)
+
 
             index += 1
             if showImage:
@@ -129,28 +135,44 @@ def prepare_training_data(data_folder_path, fruit_type = "all", removeBackground
                 elif fruit_type is 'all':
                     fruits.append(fruit)
                     labels.append(label)
+                    if use_lbp_feature:
+                        lbp_fruits.append(lbp_fruit)
+
 
 
     cv2.destroyAllWindows()
     cv2.waitKey(1)
     cv2.destroyAllWindows()
 
-    return fruits, labels
-
+    return fruits, labels, lbp_fruits
 
 
 train = False
-predict = True
-fruit_type = "apple"
+predict = False
+fruit_type = "all"
 epoch_count = 300
+svm_train = True
+use_lbp_feature = True
+
+total_banana, total_apple, total_orange = 0, 0, 0
+predicted_banana, predicted_apple, predicted_orange = 0, 0, 0
+predicted_fresh, predicted_rotten = 0, 0
+total_fresh, total_rotten = 0, 0
+total, correct = 0, 0
+
 
 print("Preparing " + fruit_type + " data...")
-fruits, labels = prepare_training_data("dataset", fruit_type=fruit_type, removeBackground=True, showImage=False)
+fruits, labels, lbp_fruits = prepare_training_data("dataset", fruit_type=fruit_type, removeBackground=True, showImage=False)
 print("Data prepared")
 # print total fruits and labels
 print("Total " + fruit_type + ": ", len(fruits))
 print("Total labels: ", len(labels))
 
+if use_lbp_feature:
+    fruits = np.concatenate(((np.array(fruits)), np.array(lbp_fruits).reshape(6300, 64, 64, 1)), axis=3)
+    array_shape = 64*64*4
+else:
+    array_shape = 64*64*3
 
 X_train, X_test, y_train, y_test = train_test_split(fruits, labels, test_size=0.1)
 
@@ -168,20 +190,75 @@ Y_test = le.transform(y_test)
 print("Labels after encoding")
 print(np.unique(Y_test))
 
-
 # Flatten data?
-#X_flat_train = X_train.reshape(X_train.shape[0], 64*64)
-#X_flat_test = X_test.reshape(X_test.shape[0], 64*64)
+X_flat_train = X_train.reshape(X_train.shape[0], array_shape)
+X_flat_test = X_test.reshape(X_test.shape[0], array_shape)
+
+if svm_train:
+    clf = svm.MulticlassSVM(C=0.001, tol=0.01, max_iter=1000, random_state=0, verbose=1)
+    clf.fit(X_flat_train, Y_train)
+    results = clf.predict(X_flat_test)
+
+    expected = le.inverse_transform(Y_test)
+    predictions = le.inverse_transform(results)
+    for i in range(len(X_test)):
+        if expected[i] == 'orange':
+            total_orange = total_orange + 1
+            if predictions[i] == 'orange':
+                predicted_orange = predicted_orange + 1
+                correct = correct + 1
+        elif expected[i] == 'banana':
+            total_banana = total_banana + 1
+            if predictions[i] == 'banana':
+                predicted_banana = predicted_banana + 1
+                correct = correct + 1
+        elif expected[i] == 'apple':
+            total_apple = total_apple + 1
+            if predictions[i] == 'apple':
+                predicted_apple = predicted_apple + 1
+                correct = correct + 1
+        total = total + 1
+else:
+    with open('model.dictionary', 'rb') as config_dictionary_file:
+
+        # Step 3
+        config_dictionary = pickle.load(config_dictionary_file)
+        config_dictionary.fit(X_flat_train, Y_train)
+        results = config_dictionary.predict(X_flat_test)
+        expected = le.inverse_transform(Y_test)
+        predictions = le.inverse_transform(results)
+        for i in range(len(X_test)):
+            if expected[i] == 'orange':
+                total_orange = total_orange + 1
+                if predictions[i] == 'orange':
+                    predicted_orange = predicted_orange + 1
+                    correct = correct + 1
+            elif expected[i] == 'banana':
+                total_banana = total_banana + 1
+                if predictions[i] == 'banana':
+                    predicted_banana = predicted_banana + 1
+                    correct = correct + 1
+            elif expected[i] == 'apple':
+                total_apple = total_apple + 1
+                if predictions[i] == 'apple':
+                    predicted_apple = predicted_apple + 1
+                    correct = correct + 1
+            total = total + 1
+
+
+print("Orange accuracy: " + str(predicted_orange) + "/" + str(total_orange) + " -- " +
+      str(predicted_orange / total_orange * 100) + "%")
+print("Banana accuracy: " + str(predicted_banana) + "/" + str(total_banana) + " -- " +
+      str(predicted_banana / total_banana * 100) + "%")
+print("Apple accuracy: " + str(predicted_apple) + "/" + str(total_apple) + " -- " +
+      str(predicted_apple / total_apple * 100) + "%")
+print("Total accuracy: " + str(correct) + "/" + str(total) + " -- " + str(correct / total * 100) + "%")
 
 
 if train:
 
-    #there are using maxpool convolution and final dense layer.
     model_cnn = Sequential()
-    # First convolutional layer, note the specification of shape
-    model_cnn.add(Conv2D(32, kernel_size=(3, 3),
-                     activation='relu',
-                     input_shape=(64, 64, 3)))
+    model_cnn.add(Conv2D(32, kernel_size=(3, 3), activation='relu', input_shape=(64, 64, 3)))
     model_cnn.add(Conv2D(64, (3, 3), activation='relu'))
     model_cnn.add(MaxPooling2D(pool_size=(2, 2)))
     model_cnn.add(Dropout(0.25))

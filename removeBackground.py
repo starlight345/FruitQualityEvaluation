@@ -17,9 +17,9 @@ from PIL import Image
 import glob
 import IPython.display as display
 
-path = r'C:\\Users\\Tanya\\Desktop\\IASR\\rottenoranges'
-outpath = 'C:\\Users\\Tanya\\Downloads\\AI3\\ISR\\rottenoranges'
-outpath2 = 'C:\\Users\\Tanya\\Downloads\\AI3\\ISR\\withoutCorners'
+path = r'C:\\Users\\Tanya\\Desktop\\IASR\\rottenoranges'  # path to the original dataset
+outpath = 'C:\\Users\\Tanya\\Downloads\\AI3\\ISR\\rottenoranges'  # path to the resized images
+outpath2 = 'C:\\Users\\Tanya\\Downloads\\AI3\\ISR\\withoutCorners' # path to the mages without the black corners
 
 filenames = glob.glob(path + "/*.png") #read all files in the path mentioned
 f = glob.glob(outpath + "/*.png")

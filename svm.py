@@ -16,6 +16,7 @@ from sklearn.preprocessing import LabelEncoder
 import pickle
 
 
+
 def projection_simplex(v, z=1):
     """
     Projection onto the simplex:
@@ -132,7 +133,7 @@ class MulticlassSVM(BaseEstimator, ClassifierMixin):
                 if self.verbose >= 1:
                     print("Converged")
                 break
-            with open('model.dictionary', 'wb') as config_dictionary_file:
+            with open('model_' + str(self.C) + '_' + str(self.max_iter) + '.dictionary', 'wb') as config_dictionary_file:
                 pickle.dump(self, config_dictionary_file)
 
         return self

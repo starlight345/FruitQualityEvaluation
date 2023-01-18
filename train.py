@@ -304,15 +304,14 @@ def mainFunction():
                 total = total + 1
 
     if svm_train or svm_predict:
-        print("Orange accuracy: " + str(predicted_orange) + "/" + str(total_orange) + " -- " +
-              str(predicted_orange / total_orange * 100) + "%")
+        # print("Orange accuracy: " + str(predicted_orange) + "/" + str(total_orange) + " -- " +
+            #   str(predicted_orange / total_orange * 100) + "%")
         print("Banana accuracy: " + str(predicted_banana) + "/" + str(total_banana) + " -- " +
               str(predicted_banana / total_banana * 100) + "%")
-        print("Apple accuracy: " + str(predicted_apple) + "/" + str(total_apple) + " -- " +
-              str(predicted_apple / total_apple * 100) + "%")
+        #print("Apple accuracy: " + str(predicted_apple) + "/" + str(total_apple) + " -- " +
+            #  str(predicted_apple / total_apple * 100) + "%")
         print("Total accuracy: " + str(correct) + "/" + str(total) + " -- " + str(correct / total * 100) + "%")
 
-    if train:
 
         model_cnn = Sequential()
         if lbp_fruits:
@@ -411,13 +410,13 @@ def mainFunction():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='args: train_method(*), dataset(*), epoch, remove_background, show_images, model_name ')
 
-    parser.add_argument('--method', metavar='path', type=str, required=True,
+    parser.add_argument('--method', metavar='path', type=str, required=True, default="svm",
                         help='Train methods: ["svm", "cnn"]. Type one of them.')
 
     parser.add_argument('--predict', metavar='path', type=str, required=True, default=True,
-                        help='True for predict, false for train')
+                        help='True for predict(=test, =inference), false for train')
 
-    parser.add_argument('--dataset', type=str, required=True,
+    parser.add_argument('--dataset', type=str, required=True, default="apple_quality",
                         help='Data sets: ["fruit_type", "apple_quality", "orange_quality", "banana_quality"]')
 
     parser.add_argument('--useLBP', type=bool, required=False,

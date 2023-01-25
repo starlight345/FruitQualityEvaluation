@@ -19,6 +19,8 @@ from keras.models import load_model
 from keras.callbacks import ReduceLROnPlateau
 import svm
 from PIL import Image
+import warnings
+warnings.filterwarnings('ignore')
 
 
 train = False
@@ -30,7 +32,7 @@ svm_predict = False
 use_lbp_feature = False
 show_image = False
 remove_bg = False
-model_name = "model_0.0001_1000.dictionary"
+model_name = "300epochorange.h5"
 
 
 
@@ -120,12 +122,12 @@ def remove_background1(img):
 
 
 
-
+    
 def rgb2gray(rgb):
     return np.dot(rgb[..., :3], [0.299, 0.587, 0.114])
 
 # preparing training data. This includes cutting fruits out of images, storing and labeling them.
-def prepare_training_data(data_folder_path, fruit_type = "all", removeBackground = remove_bg, showImage = True):
+def prepare_training_data(data_folder_path, fruit_type , removeBackground = remove_bg, showImage = True):
     dirs = os.listdir(data_folder_path)
 
     fruits = []
@@ -141,9 +143,9 @@ def prepare_training_data(data_folder_path, fruit_type = "all", removeBackground
 
         # dir name is label of the objects.
         full_label = str(dir_name)
-        if dir_name == 'freshapple' or dir_name == 'rottenapple':
+        if dir_name == 'freshapples' or dir_name == 'rottenapples':
             label = 'apple'
-        if dir_name == 'freshorange' or dir_name == 'rottenorange':
+        if dir_name == 'freshoranges' or dir_name == 'rottenoranges':
             label = 'orange'
         if dir_name == 'freshbanana' or dir_name == 'rottenbanana':
             label = 'banana'
@@ -304,12 +306,15 @@ def mainFunction():
                 total = total + 1
 
     if svm_train or svm_predict:
-        # print("Orange accuracy: " + str(predicted_orange) + "/" + str(total_orange) + " -- " +
-            #   str(predicted_orange / total_orange * 100) + "%")
-        print("Banana accuracy: " + str(predicted_banana) + "/" + str(total_banana) + " -- " +
-              str(predicted_banana / total_banana * 100) + "%")
-        #print("Apple accuracy: " + str(predicted_apple) + "/" + str(total_apple) + " -- " +
-            #  str(predicted_apple / total_apple * 100) + "%")
+        if total_orange != 0:
+            print("Orange accuracy: " + str(predicted_orange) + "/" + str(total_orange) + " -- " +
+                str(predicted_orange / total_orange * 100) + "%")
+        if total_banana != 0:
+            print("Banana accuracy: " + str(predicted_banana) + "/" + str(total_banana) + " -- " +
+                str(predicted_banana / total_banana * 100) + "%")
+        if total_apple != 0:
+            print("Apple accuracy: " + str(predicted_apple) + "/" + str(total_apple) + " -- " +
+                str(predicted_apple / total_apple * 100) + "%")
         print("Total accuracy: " + str(correct) + "/" + str(total) + " -- " + str(correct / total * 100) + "%")
 
 
@@ -340,6 +345,8 @@ def mainFunction():
                       validation_data=(X_test, Y_test),
                       callbacks=[reduce_lr])
         model_cnn.save(str(epoch_count) + "epoch" + fruit_type + ".h5")
+
+        ## h5 파일로 저장해서 
         score = model_cnn.evaluate(X_test, Y_test, verbose=0)
         print('Test loss:', score[0])
         print('Test accuracy:', score[1])
@@ -399,11 +406,14 @@ def mainFunction():
                         predicted_rotten = predicted_rotten + 1
                         correct = correct + 1
                 total = total + 1
-
-            print("Fresh " + fruit_type + " accuracy: " + str(predicted_fresh) + "/" + str(total_fresh) + " -- " +
-                  str(predicted_fresh / total_fresh * 100) + "%")
-            print("Rotten " + fruit_type + " accuracy: " + str(predicted_rotten) + "/" + str(total_rotten) + " -- " +
-                  str(predicted_rotten / total_rotten * 100) + "%")
+            print("fresh ones are: ", predicted_fresh ,", ", total_fresh)
+            print("rotten ones are: ", predicted_rotten ,", ", total_rotten)
+            if total_fresh != 0:
+                print("Fresh " + fruit_type + " accuracy: " + str(predicted_fresh) + "/" + str(total_fresh) + " -- " +
+                    str(predicted_fresh / total_fresh * 100) + "%")
+            if total_rotten != 0:
+                print("Rotten " + fruit_type + " accuracy: " + str(predicted_rotten) + "/" + str(total_rotten) + " -- " +
+                    str(predicted_rotten / total_rotten * 100) + "%")
             print("Total accuracy: " + str(correct) + "/" + str(total) + " -- " + str(correct / total * 100) + "%")
 
 
@@ -428,10 +438,10 @@ if __name__ == '__main__':
     parser.add_argument('--remove_background', type=bool, required=False,
                         help='remove_background?', default=False)
 
-    parser.add_argument('--show_images', type=bool, required=False,
+    parser.add_argument('--show_images', type=bool, required=False, 
                         help='show images in preprocessing? (might take a little long)', default=False)
 
-    parser.add_argument('--model_name', required=False, default="model_0.0001_1000.dictionary",
+    parser.add_argument('--model_name', required=False, default="300epochorange.h5",
                         help='You can type a model name to predict on')
 
     args = parser.parse_args()

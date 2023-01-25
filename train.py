@@ -32,7 +32,7 @@ svm_predict = False
 use_lbp_feature = False
 show_image = False
 remove_bg = False
-model_name = "300epochorange.h5"
+model_name = "model_0.0001_1000_1.dictionary"
 
 
 
@@ -352,6 +352,7 @@ def mainFunction():
         print('Test accuracy:', score[1])
 
     if predict:
+        print("here I am")
         bananas = []
         oranges = []
         apples = []
@@ -418,7 +419,7 @@ def mainFunction():
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='args: train_method(*), dataset(*), epoch, remove_background, show_images, model_name ')
+    parser = argparse.ArgumentParser(description='args: train_method(*), predict, dataset(*), epoch, remove_background, show_images, model_name, fruit_type')
 
     parser.add_argument('--method', metavar='path', type=str, required=True, default="svm",
                         help='Train methods: ["svm", "cnn"]. Type one of them.')
@@ -429,11 +430,15 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, required=True, default="apple_quality",
                         help='Data sets: ["fruit_type", "apple_quality", "orange_quality", "banana_quality"]')
 
+
+    parser.add_argument('--fruit_type', type=str, required=False, default="all",
+                        help='fruit_type: ["all", "apple", "orange", "banana"]')
+
     parser.add_argument('--useLBP', type=bool, required=False,
                         help='True or False', default=False)
 
     parser.add_argument('--epoch', type=int, required=False,
-                        help='epoch or iteration count', default=200)
+                        help='epoch or iteration count', default=200) 
 
     parser.add_argument('--remove_background', type=bool, required=False,
                         help='remove_background?', default=False)
@@ -441,7 +446,7 @@ if __name__ == '__main__':
     parser.add_argument('--show_images', type=bool, required=False, 
                         help='show images in preprocessing? (might take a little long)', default=False)
 
-    parser.add_argument('--model_name', required=False, default="300epochorange.h5",
+    parser.add_argument('--model_name', required=False, default="model_0.0001_1000_1.dictionary",
                         help='You can type a model name to predict on')
 
     args = parser.parse_args()
@@ -449,30 +454,32 @@ if __name__ == '__main__':
         if args.predict:
             predict = True
         else:
+            predict = False
             train = True
     elif args.method == "svm":
         if args.predict:
             svm_predict = True
+            predict = False
         else:
             svm_train = True
     else:
         print("Argument error.")
-    if args.dataset is "fruit_type":
-        fruit_type = "all"
-    elif args.dataset is "apple_quality":
-        fruit_type = "apple"
-    elif args.dataset is "orange_quality":
-        fruit_type = "orange"
-    elif args.dataset is "banana_quality":
-        fruit_type = "banana"
+    if args.dataset =="fruit_type":
+        args.fruit_type == "all"
+    elif args.dataset == "apple_quality":
+        args.fruit_type = "apple"
+    elif args.dataset == "orange_quality":
+        args.fruit_type = "orange"
+    elif args.dataset == "banana_quality":
+        args.fruit_type = "banana"
 
     epoch_count = args.epoch
     use_lbp_feature = args.useLBP
     remove_bg = args.remove_background
     show_image = args.show_images
     model_name = args.model_name
-
-
+    fruit_type = args.fruit_type
+    print(args.fruit_type, "--This is the fruit type")
 
     mainFunction()
 
